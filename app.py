@@ -1,48 +1,74 @@
 import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
+import pickle
+import numpy as np
+# import sklearn
+# from sklearn.preprocessing import LabelEncoder
 
-def main():
-    st.title("Simple Scatter Plot App")
-    st.write("Enter your data below and click on 'Generate Plot' to create a scatter plot.")
+# print(sklearn.__version__)
 
-    data = get_user_input()
+pipe = pickle.load(open('pipe.pkl', 'rb'))
+df = pickle.load(open('df.pkl', 'rb'))
 
-    if data is not None:
-        st.subheader("Scatter Plot")
-        create_scatter_plot(data)
+st.title("Laptop Predictor")
 
-def get_user_input():
-    st.subheader("Enter Data")
-    data = st.text_area("Input format: 'x1, y1\nx2, y2\n...'", height=200)
-    
-    if st.button("Generate Plot"):
-        if data:
-            data = data.strip()
-            lines = data.split("\n")
-            xy_data = [line.split(",") for line in lines]
-            try:
-                x_values = [float(item[0].strip()) for item in xy_data]
-                y_values = [float(item[1].strip()) for item in xy_data]
-                data = pd.DataFrame({"x": x_values, "y": y_values})
-            except ValueError:
-                st.error("Invalid data format. Please provide data in 'x, y' format.")
-                data = None
-        else:
-            st.error("Please enter data in 'x, y' format.")
-            data = None
+# brand
+company = st.selectbox('Brand', df['Company'].unique())
+
+# type of laptop
+type = st.selectbox('Type', df['TypeName'].unique())
+
+# Ram
+ram = st.selectbox('RAM(in GB)', [2, 4, 6, 8, 12, 16, 18, 24, 32, 64])
+
+# Weight
+weight = st.number_input('Weight of the laptop')
+
+# Touchscreen
+touchscreen = st.selectbox('TouchScreen', ['No', 'Yes'])
+
+# IPS
+ips = st.selectbox('IPS', ['No', 'Yes'])
+
+# screen size
+screen_size = st.number_input('Screen Size')
+
+# resolution
+resolution = st.selectbox('Screen Resolution',
+                          ['1920x1080', '1366x768', '1600x900', '3840x2160', '3200x1800', '2880x1800', '2560x1600',
+                           '2560x1440', '2304x1440'])
+
+# cpu
+cpu = st.selectbox('CPU', df['CpuBrand'].unique())
+
+hdd = st.selectbox('HDD(in GB)', [0, 128, 256, 512, 1024, 2048])
+
+ssd = st.selectbox('SSD(in GB)', [0, 8, 128, 256, 512, 1024])
+
+gpu = st.selectbox('GPU', df['GpuBrand'].unique())
+
+os = st.selectbox('OS', df['os'].unique())
+                  
+
+if st.button('Predict Price'):
+    ppi = None
+    if touchscreen == 'Yes':
+        touchscreen = 1
     else:
-        data = None
+        touchscreen = 0
 
-    return data
+    if ips == 'Yes':
+        ips = 1
+    else:
+        ips = 0
 
-def create_scatter_plot(data):
-    fig, ax = plt.subplots()
-    ax.scatter(data["x"], data["y"])
-    ax.set_xlabel("X-axis")
-    ax.set_ylabel("Y-axis")
-    ax.set_title("Scatter Plot")
-    st.pyplot(fig)
+    X_res = int(resolution.split('x')[0])
+    Y_res = int(resolution.split('x')[1])
+    ppi = ((X_res ** 2) + (Y_res ** 2)) ** 0.5 / screen_size
+    query = np.array([company, type, ram, weight, touchscreen, ips, ppi, cpu, hdd, ssd, gpu, os], dtype=object)
 
-if __name__ == "__main__":
-    main()
+    query = query.reshape(1, 12)
+    try:
+        prediction = pipe.predict(query)
+        st.title("The predicted price of this configuration is " + str(int(np.exp(pipe.predict(query)[0]))))
+    except Exception as e:
+        st.error("An error occurred during prediction: {}".format(e))
