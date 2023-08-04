@@ -1,4 +1,4 @@
 xgboost
 numpy
 scikit-learn
-pandas
+pandas<2.0.0
