@@ -6,8 +6,8 @@ import numpy as np
 
 # print(sklearn.__version__)
 
-pipe = pickle.load(open('pipe.pkl', 'rb'))
-df = pickle.load(open('df.pkl', 'rb'))
+# pipe = pickle.load(open('pipe.pkl', 'rb'))
+# df = pickle.load(open('df.pkl', 'rb'))
 
 st.title("Laptop Predictor")
 
